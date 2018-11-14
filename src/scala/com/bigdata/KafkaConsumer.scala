@@ -17,7 +17,7 @@ import scala.collection.mutable
   * Created by Administrator on 2018/11/10.
   */
 object KafkaConsumer {
-  var kafkaStream: InputDStream[ConsumerRecord[String, String]]
+  var kafkaStream: InputDStream[ConsumerRecord[String, String]] = null
 
   val conf = new SparkConf().setMaster("local[2]").setAppName("KafkaCosumer").
     set("es.nodes", "192.168.1.1").
@@ -42,7 +42,7 @@ object KafkaConsumer {
     kafkaStream = KafkaUtils.createDirectStream[String, String](
       ssc,
       PreferConsistent,
-      Subscribe[String, String](topics, kafkaParams)
+      Subscribe[String, String](topics, kafkaParams))
   } else {
     kafkaStream = KafkaUtils.createDirectStream[String, String](
       ssc,
