@@ -15,7 +15,7 @@ import org.apache.spark.streaming.kafka010.HasOffsetRanges
 /**
   * Created by Administrator on 2018/11/10.
   */
-case class ZookeeperService(topic: String, zkServers: String) {
+case class ZookeeperService(topic: String, zkServers: String) extends LogSupport{
 
   val zkTopicPath: String = {
     val topicDirs = new ZKGroupTopicDirs("streaming_consumer_group", topic)
@@ -117,7 +117,10 @@ case class ZookeeperService(topic: String, zkServers: String) {
         Map[TopicPartition, Long]()
       }
     } catch {
-      case e: Exception => Map[TopicPartition, Long]()
+      case e: Exception => {
+        logError(s"calculateCunsumerOffset exception", e)
+        Map[TopicPartition, Long]()
+      }
     } finally {
       client.close()
     }
@@ -136,7 +139,9 @@ case class ZookeeperService(topic: String, zkServers: String) {
         ZkUtils(client, false).updatePersistentPath(s"${zkTopicPath}/${o.partition}",String.valueOf(o.untilOffset))
       }
     }catch {
-      case e: Exception => ""
+      case e: Exception => {
+        logError(s"savePartitionOffsets exception", e)
+      }
     } finally {
       client.close()
     }
