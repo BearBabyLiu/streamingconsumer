@@ -22,14 +22,14 @@ object KafkaConsumer extends LogSupport {
 
     var kafkaStream: InputDStream[ConsumerRecord[String, String]] = null
     val conf = new SparkConf().setMaster("local[2]").setAppName("KafkaCosumer").
-      set("es.nodes", "192.168.1.1").
+      set("es.nodes", "slave1").
       set("es.port", "9200").
       set("es.index.auto.create", "true")
 
     val ssc = new StreamingContext(conf, Seconds(1))
 
     val kafkaParams = Map[String, Object](
-      "bootstrap.servers" -> "localhost:9092",
+      "bootstrap.servers" -> "slave1:9092",
       "key.deserializer" -> classOf[StringDeserializer],
       "value.deserializer" -> classOf[StringDeserializer],
       "group.id" -> "kafka-consumer",
@@ -37,11 +37,11 @@ object KafkaConsumer extends LogSupport {
       "enable.auto.commit" -> (false: java.lang.Boolean)
     )
 
-    val topics = Array("topicName")
-    val zkInstance = ZookeeperService("topicName", "localhost:2181")
+    val topics = Array("test")
+    val zkInstance = ZookeeperService("test", "slave1:2181/kafka")
 
     /** 从zk获取上一次保存的patition的offset,这里需要考虑最大值与最小值越界 */
-    val fromOffsets = zkInstance.calculateCunsumerOffset("localhost", 9092)
+    val fromOffsets = zkInstance.calculateCunsumerOffset("slave1", 9092)
 
     /**
       * 对于offset为0的情况则从头开始消费,否则从指定偏移消费
@@ -58,13 +58,14 @@ object KafkaConsumer extends LogSupport {
         Assign[String, String](fromOffsets.keys.toList, kafkaParams, fromOffsets))
     }
 
+    logInfo(s"kaiaiajiijfaijfiaf hello")
     /**
       * kafka的数据入ES
       */
     kafkaStream.foreachRDD(kafkaRDD => {
       if (!kafkaRDD.isEmpty()) {
         /** 取kafka的数据,数据是一个json字符串 */
-        val lines = kafkaRDD.map(_.value())
+        val lines = kafkaRDD.map(_.value()).filter(_.nonEmpty)
 
         /** json解析为case class */
         val employeeRDD = lines.map(line => {
